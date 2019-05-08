@@ -83,75 +83,79 @@ for (taskID in 1:2) {
 
   start_time_2 = Sys.time()
   
-  for {n in range(generations):
-    print 'generation: ', n, '\t', 'number of entities: ', entities
+  for (n in 0:generations) {
+    print(paste('generation: ', n, '  ', 'number of entities: ', entities))
   
-  ### walk iteration ###
-  xmove = numpy.random.normal(mig_mu, mig_sigma, (entities,1))	# amount to move by in x direction
-  ymove = numpy.random.normal(mig_mu, mig_sigma, (entities,1))	# amount to move by in y direction
-  
-  # calculate new positions and check viability (geographical)
-  xnew = x + xmove												# proposed x position
-  xpos = where(less(xnew,x_min)|greater(xnew,x_max), x, xnew)		# check geographical viability of proposed x position
-  x = xpos														# new x position
-  
-  ynew = y + ymove												# proposed  y position
-  ypos = where(less(ynew,y_min)|greater(ynew,y_max), y, ynew)		# check geographical viability of proposed y position
-  y = ypos														# new y position
-  
-  
-  ### fission / extinction iteration ###
-  # entities undergo fission with probability == prob_fis
-  CM_matrix_original = CM_matrix.copy()
-  fis = scipy.random.random((entities,))												# entities undergo fission if value in corresponding fis array <= prob_fis
-  
-  # FISSION PROCESS - duplicate data for entities that undergo fission in x, y and CM_matrix
-  fis_entities_ind = where(less_equal(fis,prob_fis))									# indices of entities undergoing fission
-  #	print 'fis entities:', len(fis_entities_ind[0])
-  
-  x = vstack((x, x[fis_entities_ind]))
-  y = vstack((y, y[fis_entities_ind]))
-  CM_matrix = vstack((CM_matrix, CM_matrix_original[fis_entities_ind]))
-  entities = x.shape[0]
-  
-  # check if number of entities has reached max_entities; if so:
-  # EXTINCTION PROCESS - delete data for entities that undergo extinction from x, y and CM_matrix
-  #	if entities>max_entities: print 'THERE ARE MORE ENTITIES THAN MAX ENTITIES - AN EXTINCTION PROCESS SHOULD BE HAPPENING HERE!'
-  
-  CM_matrix_original = CM_matrix.copy()
-  
-  if entities>max_entities:	
-    ext_entities_ind = random.sample(range(entities), entities-max_entities)		# indices of surplus # of entities selected (random sampling) to undergo extinction
-  #		if len(ext_entities_ind): print 'ext entities:', len(ext_entities_ind)
-  
-  x = delete(x, ext_entities_ind, axis=0)
-  y = delete(y, ext_entities_ind, axis=0)
-  CM_matrix = delete(CM_matrix_original, ext_entities_ind, axis=0)
-  entities = x.shape[0]
-  
-  # check if all entities extinct
-  if entities == 0:
-    q = open('sim_data_2D_mig{0}_cm{1}_fis{2}_{3}.txt'.format("%.6f"% round(mig_sigma,12),CM_sigma_frac,prob_fis),taskID,'a')
-  q.write("All entities have gone extinct at iteration "+str(n)+'.'+'\n')
-  q.close()
-  break
-  
-  
-  ### mutation iteration ###
-  # NOTE! each CM measurement of each entity mutates (varies slightly) between generations
-  # CM measurements vary according to gaussian distribution with mean CM_matrix and s.d. CM_sigma
-  CM_matrix = scipy.random.normal(CM_matrix, CM_sigma, (entities,num_CM_meas))
-  CM_matrix = abs(CM_matrix)
-  
-  
-  ### feature depositing iteration ###
-  # entities sampled with probability == prob_dep
-  # for sampled entities, data recoded to output: 25*n, x, y, CM_matrix values
-  if (n>10000):
-    dep = scipy.random.binomial(1, prob_dep, (entities,))
-  dep_entities_ind = where(dep==1)												# indices of entities sampled
-  dep_matrix = hstack((25*n*ones((len(dep_entities_ind[0]),1)), x[dep_entities_ind], y[dep_entities_ind], CM_matrix[dep_entities_ind]))		# 25*n, x, y and CM_matrix values for entities sampled
-  final_output = vstack((final_output, dep_matrix))
+    ### walk iteration ###
+    xmove <- rnorm(entities, mig_mu, mig_sigma)	# amount to move by in x direction
+    ymove <- rnorm(entities, mig_mu, mig_sigma)	# amount to move by in y direction
+    
+    # calculate new positions and check viability (geographical)
+    xnew <- x + xmove	# proposed x position
+    xpos <- ifelse(xnew < x_min | xnew > x_max, x, xnew) # check geographical viability of proposed x position
+    x <- xpos # new x position
+    
+    ynew <- y + ymove # proposed  y position
+    ypos <- ifelse(ynew < y_min | ynew > y_max, y, ynew) # check geographical viability of proposed y position
+    y <- ypos	# new y position
+    
+    
+    ### fission / extinction iteration ###
+    # entities undergo fission with probability == prob_fis
+    CM_matrix_original <- CM_matrix
+    fis <- runif(entities) # entities undergo fission if value in corresponding fis array <= prob_fis
+    
+    # FISSION PROCESS - duplicate data for entities that undergo fission in x, y and CM_matrix
+    fis_entities_ind = which(fis <= prob_fis) # indices of entities undergoing fission
+    #	print 'fis entities:', len(fis_entities_ind[0])
+    
+    x <- rbind(x, x[fis_entities_ind])
+    y <- rbind(y, y[fis_entities_ind])
+    CM_matrix <- rbind(CM_matrix, CM_matrix_original[fis_entities_ind])
+    entities <- nrow(x)
+    
+    # check if number of entities has reached max_entities; if so:
+    # EXTINCTION PROCESS - delete data for entities that undergo extinction from x, y and CM_matrix
+    #	if entities>max_entities: print 'THERE ARE MORE ENTITIES THAN MAX ENTITIES - AN EXTINCTION PROCESS SHOULD BE HAPPENING HERE!'
+    
+    CM_matrix_original <- CM_matrix
+    
+    if (entities > max_entities)	
+      ext_entities_ind = sample(0:entities, ifelse(entities >= max_entities, abs(entities - max_entities), 0)) # indices of surplus # of entities selected (random sampling) to undergo extinction
+      #		if len(ext_entities_ind): print 'ext entities:', len(ext_entities_ind)
+      
+      x <- x[-ext_entities_ind,]
+      y <- y[-ext_entities_ind,]
+      CM_matrix = CM_matrix_original[-ext_entities_ind,]
+      entities = nrow(x)
+    
+    # check if all entities extinct
+    if (entities == 0) {
+    #   q = open('sim_data_2D_mig{0}_cm{1}_fis{2}_{3}.txt'.format("%.6f"% round(mig_sigma,12),CM_sigma_frac,prob_fis),taskID,'a')
+    # q.write("All entities have gone extinct at iteration "+str(n)+'.'+'\n')
+    # q.close()
+    # break
+    }
+    
+    
+    ### mutation iteration ###
+    # NOTE! each CM measurement of each entity mutates (varies slightly) between generations
+    # CM measurements vary according to gaussian distribution with mean CM_matrix and s.d. CM_sigma
+    CM_matrix = matrix(data = rnorm(entities * num_CM_meas, CM_matrix, CM_sigma), entities, num_CM_meas)
+    CM_matrix = abs(CM_matrix)
+    
+    
+    ### feature depositing iteration ###
+    # entities sampled with probability == prob_dep
+    # for sampled entities, data recoded to output: 25*n, x, y, CM_matrix values
+    if (n > 10000) {
+      dep <- rbinom(entities, 1, prob_dep)
+      dep_entities_ind <- which(dep == 1)												# indices of entities sampled
+      dep_matrix = hstack((25*n*ones((len(dep_entities_ind[0]),1)), x[dep_entities_ind], y[dep_entities_ind], CM_matrix[dep_entities_ind]))		# 25*n, x, y and CM_matrix values for entities sampled
+      final_output = vstack((final_output, dep_matrix))
+    }
+    
+  }
   
   end_time_2 = time.time()
   time_taken_2 = end_time_2 - start_time_2
