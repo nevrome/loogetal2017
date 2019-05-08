@@ -13,7 +13,7 @@ y_min <- -4000
 y_max <- 4000
 
 # population parameters
-generations <- 20001 # number of steps in random walk
+generations <- 301 # number of steps in random walk
 in_entities <- 1 # initial number of entities
 max_entities <- 10000	# carrying capacity - maximum number of entities the modelled domain can sustain
 
@@ -26,10 +26,10 @@ CM_sigma_frac <- 0.05 # standard deviation of CM gaussian - proportion of mean (
 CM_sigma_val <- CM_mu*CM_sigma_frac # standard deviation of CM gaussian - value (CM_mu*CM_sigma_frac)
 
 prob_fis <- 0.1 # probability with which each entity fissions at each generation
-prob_dep <- 0.00001 # probability with which each entity is sampled (data recorded to output)
+prob_dep <- 0.2#0.00001 # probability with which each entity is sampled (data recorded to output)
 
 
-for (taskID in 1:2) {
+#for (taskID in 1:2) {
 
   ###########################
   ### VARIABLE PARAMETERS ###
@@ -49,10 +49,7 @@ for (taskID in 1:2) {
   ##q.write("PARAMS VARIED BETWEEN SIMS:"+"\n"+'average distance (km/yr):     '+str(mig_sigma/float(25))+"\n"+"\n"+"PARAMS FIXED BETWEEN SIMS:"+'\n'+"generations:                  "+str(generations)+'\n'+'\n'+'number of CM measurements:    '+str(num_CM_meas)+'\n'+'initial CM measurement mean:  '+str(CM_mu)+"\n"+'CM sigma (proportion):        '+str(CM_sigma_frac)+'\n'+'CM sigma (value):             '+str(CM_sigma_val)+'\n'+'\n'+'initial number of entities:   '+str(in_entities)+'\n'+'maximum number of entities:   '+str(max_entities)+'\n'+'\n'+'probability of fission:       '+str(prob_fis)+"\n"+'probability of sampling:      '+str(prob_dep)+"\n"+'\n')
   ##q.close()
   
-  # initialise array for saving output to file (+3 for n, x and y values)
-  final_output <- rep(0, num_CM_meas+3)
-  
-  
+
   ##################
   ### INITIALISE ###
   ##################
@@ -77,6 +74,8 @@ for (taskID in 1:2) {
   ###########################
 
   start_time_2 = Sys.time()
+  
+  hu <- list()
   
   for (n in 0:generations) {
     print(paste('generation: ', n, '  ', 'number of entities: ', entities))
@@ -118,14 +117,18 @@ for (taskID in 1:2) {
     
     CM_matrix_original <- CM_matrix
     
-    if (entities > max_entities)	
-      ext_entities_ind = sample(0:entities, ifelse(entities >= max_entities, abs(entities - max_entities), 0)) # indices of surplus # of entities selected (random sampling) to undergo extinction
+    if (entities > max_entities) {	
+      ext_entities_ind <- sample(0:entities, ifelse(entities >= max_entities, abs(entities - max_entities), 0)) # indices of surplus # of entities selected (random sampling) to undergo extinction
       #		if len(ext_entities_ind): print 'ext entities:', len(ext_entities_ind)
       
-      x <- x[-ext_entities_ind,]
-      y <- y[-ext_entities_ind,]
-      CM_matrix = CM_matrix_original[-ext_entities_ind,]
-      entities = nrow(x)
+      if (length(ext_entities_ind) > 0) {
+        x <- x[-ext_entities_ind, , drop = F]
+        y <- y[-ext_entities_ind, , drop = F]
+        CM_matrix = CM_matrix_original[-ext_entities_ind, , drop = F]
+        entities = nrow(x)
+      }
+      
+    }
     
     # check if all entities extinct
     if (entities == 0) {
@@ -139,25 +142,42 @@ for (taskID in 1:2) {
     ### mutation iteration ###
     # NOTE! each CM measurement of each entity mutates (varies slightly) between generations
     # CM measurements vary according to gaussian distribution with mean CM_matrix and s.d. CM_sigma
-    CM_matrix = matrix(data = rnorm(entities * num_CM_meas, CM_matrix, CM_sigma), entities, num_CM_meas)
-    CM_matrix = abs(CM_matrix)
+    CM_matrix <- matrix(
+      data = rnorm(entities * num_CM_meas, as.vector(CM_matrix), as.vector(CM_sigma)), 
+      entities, 
+      num_CM_meas
+    )
+    CM_matrix <- abs(CM_matrix)
     
     
     ### feature depositing iteration ###
     # entities sampled with probability == prob_dep
     # for sampled entities, data recoded to output: 25*n, x, y, CM_matrix values
-    if (n > 10000) {
+    if (n > generations/2) {
       dep <- rbinom(entities, 1, prob_dep)
-      dep_entities_ind <- which(dep == 1)												# indices of entities sampled
-      dep_matrix = hstack((25*n*ones((len(dep_entities_ind[0]),1)), x[dep_entities_ind], y[dep_entities_ind], CM_matrix[dep_entities_ind]))		# 25*n, x, y and CM_matrix values for entities sampled
-      final_output = vstack((final_output, dep_matrix))
+      dep_entities_ind <- which(dep == 1) # indices of entities sampled
+      if (length(dep_entities_ind) > 0) {
+        dep_matrix <- data.frame(
+          n25 = matrix(25*n, length(dep_entities_ind), 1), 
+          x = x[dep_entities_ind,], 
+          y = y[dep_entities_ind,], 
+          CM_matrix[dep_entities_ind,]
+        )		# 25*n, x, y and CM_matrix values for entities sampled
+        if (!exists("final_output")) {
+          final_output <- dep_matrix
+        } else {
+          final_output <- rbind(final_output, dep_matrix)
+        }
+        hu[[n]] <- final_output
+        
+      }
     }
     
   }
   
-  end_time_2 = time.time()
-  time_taken_2 = end_time_2 - start_time_2
-  print "time taken for", n, "generations is", time_taken_2/60, "minutes"
+  # end_time_2 = time.time()
+  # time_taken_2 = end_time_2 - start_time_2
+  # print "time taken for", n, "generations is", time_taken_2/60, "minutes"
   
   #########################
   ### END OF SIMULATION ###
@@ -169,11 +189,11 @@ for (taskID in 1:2) {
   ##############
   
   # record output to file
-  q = open('sim_data_2D_mig{0}_cm{1}_fis{2}_{3}.txt'.format("%.6f"% round(mig_sigma,12),CM_sigma_frac,prob_fis,taskID),'a')
-  savetxt(q, final_output[1:])
-  q.close()
-  
-  run_r_simdata = 'R CMD BATCH "--args ' + str("%.6f"% round(mig_sigma,12) + '-' + str(CM_sigma_frac) + '-' + str(prob_fis) + '-' + str(taskID)) + '-' + str(generations) + '" simdata_2Dmodel.R'
-  os.system(run_r_simdata)
+  # q = open('sim_data_2D_mig{0}_cm{1}_fis{2}_{3}.txt'.format("%.6f"% round(mig_sigma,12),CM_sigma_frac,prob_fis,taskID),'a')
+  # savetxt(q, final_output[1:])
+  # q.close()
+  # 
+  # run_r_simdata = 'R CMD BATCH "--args ' + str("%.6f"% round(mig_sigma,12) + '-' + str(CM_sigma_frac) + '-' + str(prob_fis) + '-' + str(taskID)) + '-' + str(generations) + '" simdata_2Dmodel.R'
+  # os.system(run_r_simdata)
 
-}
+#}
