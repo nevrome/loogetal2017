@@ -58,23 +58,18 @@ for (taskID in 1:2) {
   ##################
   
   # initial (empty) array for storing population density values in
-  entities = in_entities
+  entities <- in_entities
   
   # initial positions
-  x <- runif(entities, x_min, x_max)
-  y <- runif(entities, x_min, x_max)
+  x <- matrix(runif(entities, x_min, x_max), entities, 1)
+  y <- matrix(runif(entities, y_min, y_max), entities, 1)
 
   x_original <- x
   y_original <- y
   
-  #plot(x,y,'.k')
-  #axis([x_min, x_max, y_min, y_max])
-  #hold(False)
-  #show()
-  
   # initial CM measurements
   CM_matrix <- matrix(CM_mu, entities, num_CM_meas)
-  CM_sigma <- rep(CM_sigma_val, num_CM_meas)
+  CM_sigma <- matrix(CM_sigma_val, num_CM_meas, 1)
   
   
   ###########################
@@ -87,8 +82,8 @@ for (taskID in 1:2) {
     print(paste('generation: ', n, '  ', 'number of entities: ', entities))
   
     ### walk iteration ###
-    xmove <- rnorm(entities, mig_mu, mig_sigma)	# amount to move by in x direction
-    ymove <- rnorm(entities, mig_mu, mig_sigma)	# amount to move by in y direction
+    xmove <- matrix(rnorm(entities, mig_mu, mig_sigma), entities, 1)	# amount to move by in x direction
+    ymove <- matrix(rnorm(entities, mig_mu, mig_sigma), entities, 1)	# amount to move by in y direction
     
     # calculate new positions and check viability (geographical)
     xnew <- x + xmove	# proposed x position
@@ -104,14 +99,17 @@ for (taskID in 1:2) {
     # entities undergo fission with probability == prob_fis
     CM_matrix_original <- CM_matrix
     fis <- runif(entities) # entities undergo fission if value in corresponding fis array <= prob_fis
-    
+
     # FISSION PROCESS - duplicate data for entities that undergo fission in x, y and CM_matrix
-    fis_entities_ind = which(fis <= prob_fis) # indices of entities undergoing fission
+    fis_entities_ind <- which(fis <= prob_fis) # indices of entities undergoing fission
     #	print 'fis entities:', len(fis_entities_ind[0])
     
-    x <- rbind(x, x[fis_entities_ind])
-    y <- rbind(y, y[fis_entities_ind])
-    CM_matrix <- rbind(CM_matrix, CM_matrix_original[fis_entities_ind])
+    if (length(fis_entities_ind) > 0) {
+      x <- rbind(x, x[fis_entities_ind, , drop = FALSE])
+      y <- rbind(y, y[fis_entities_ind, , drop = FALSE])
+      CM_matrix <- rbind(CM_matrix, CM_matrix_original[fis_entities_ind, , drop = FALSE])
+    }
+    
     entities <- nrow(x)
     
     # check if number of entities has reached max_entities; if so:
