@@ -26,7 +26,7 @@ CM_sigma_frac <- 0.05 # standard deviation of CM gaussian - proportion of mean (
 CM_sigma_val <- CM_mu*CM_sigma_frac # standard deviation of CM gaussian - value (CM_mu*CM_sigma_frac)
 
 prob_fis <- 0.1 # probability with which each entity fissions at each generation
-prob_dep <- 0.2#0.00001 # probability with which each entity is sampled (data recorded to output)
+prob_dep <- 0.00001 # probability with which each entity is sampled (data recorded to output)
 
 
 #for (taskID in 1:2) {
@@ -161,7 +161,7 @@ prob_dep <- 0.2#0.00001 # probability with which each entity is sampled (data re
           n25 = matrix(25*n, length(dep_entities_ind), 1), 
           x = x[dep_entities_ind,], 
           y = y[dep_entities_ind,], 
-          CM_matrix[dep_entities_ind,]
+          CM_matrix[dep_entities_ind, , drop = F]
         )		# 25*n, x, y and CM_matrix values for entities sampled
         if (!exists("final_output")) {
           final_output <- dep_matrix
