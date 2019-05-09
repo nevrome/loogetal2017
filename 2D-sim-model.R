@@ -9,7 +9,7 @@ y_min <- -4000
 y_max <- 4000
 
 # population parameters
-generations <- 301 # number of steps in random walk
+generations <- 20001 # number of steps in random walk
 in_entities <- 1 # initial number of entities
 max_entities <- 10000	# carrying capacity - maximum number of entities the modelled domain can sustain
 
@@ -58,6 +58,7 @@ CM_sigma <- matrix(CM_sigma_val, num_CM_meas, 1)
 ### START OF SIMULATION ###
 ###########################
 
+rm("final_output")
 for (n in 0:generations) {
   
   print(paste('generation: ', n, '  ', 'number of entities: ', entities))
@@ -149,3 +150,10 @@ for (n in 0:generations) {
   }
   
 }
+
+###############################
+### SAVE SIMULATION RESULTS ###
+###############################
+
+save(final_output, file = "2D-sim-results.RData")
+
