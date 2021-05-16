@@ -437,9 +437,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.0768943"
-     inkscape:cx="1275.1408"
-     inkscape:cy="-165.12951"
+     inkscape:zoom="0.76147926"
+     inkscape:cx="1231.4281"
+     inkscape:cy="-119.48825"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -12536,20 +12536,20 @@
          y="-48.316334"
          x="298.37119"
          id="tspan3850"
-         sodipodi:role="line">~</tspan></text>
+         sodipodi:role="line">+</tspan></text>
     <text
        id="text3856"
-       y="-48.316334"
-       x="339.17398"
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       y="-46.949081"
+       x="339.77924"
+       style="font-style:normal;font-weight:normal;font-size:15.9185px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.397963"
        xml:space="preserve"
        inkscape:export-xdpi="96"
        inkscape:export-ydpi="96"><tspan
-         style="stroke-width:0.264583"
-         y="-48.316334"
-         x="339.17398"
+         style="stroke-width:0.397963"
+         y="-46.949081"
+         x="339.77924"
          id="tspan3854"
-         sodipodi:role="line">≈</tspan></text>
+         sodipodi:role="line">⮕</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
